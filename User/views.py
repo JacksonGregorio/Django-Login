@@ -43,6 +43,6 @@ def login(request):
             return JsonResponse({'error': 'Invalid credentials'}, status=400)
         refresh = RefreshToken.for_user(user)
         response = HttpResponse(status=200)
-        response['Authorization'] = f'Bearer {str(refresh.access_token)}'
+        response['Authorization'] = f'Bearer {str(refresh.access_token)}' #respota do token pelo header
         return response
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
