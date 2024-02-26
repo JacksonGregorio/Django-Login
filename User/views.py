@@ -110,7 +110,7 @@ def check_user_data_email(request, email):
         user = JWTAuthentication().get_user(UntypedToken(token))
         if user is not None:
             user = get_object_or_404(AbstractUser, email=user.email, id=user.id)
-            if user.email == emaildata:  # Checa se o email do token é igual ao email do parametro
+            if user.email == emaildata:  # ver checa se o email do token igual o email do parametro
                 return JsonResponse({"email" : user.email, "id" : user.id}, status=200)
             else:
                 return JsonResponse({'error': 'This use email is not compatibility'}, status=404)
