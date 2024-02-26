@@ -3,7 +3,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth.hashers import make_password
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import UntypedToken
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from .models import AbstractUser
@@ -46,3 +49,32 @@ def login(request):
         response['Authorization'] = f'Bearer {str(refresh.access_token)}' #respota do token pelo header
         return response
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
+@csrf_exempt
+def logout(request):
+    if request.method == "POST":
+        response = HttpResponse(status=200)
+        response['Authorization'] = ''
+        return response
+    return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@csrf_exempt
+def check_user_exists(request):
+    if request.method == "GET":
+        token = request.META.get('HTTP_AUTHORIZATION', "Bearer ").split(' ')[1]
+        print(token)
+        try:
+            UntypedToken(token)
+        except (InvalidToken, TokenError) as e:
+            return JsonResponse({'error': 'Invalid token', 'detail': str(e)}, status=400)
+        user = JWTAuthentication().get_user(UntypedToken(token))
+        if user is not None:
+            user = get_object_or_404(AbstractUser, email=user.email)
+            return JsonResponse({'email': user.email}, status=200)
+        else:
+            return JsonResponse({'exists': False}, status=404)
+    return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
+
+
