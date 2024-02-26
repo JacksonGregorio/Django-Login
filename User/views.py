@@ -95,6 +95,24 @@ def check_user_email(request):
             return JsonResponse({'exists': False}, status=404)
     return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
 
-
-
-
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@csrf_exempt
+def check_user_data_email(request, email):
+    emaildata = email
+    if request.method == "GET":
+        token = request.META.get('HTTP_AUTHORIZATION', "Bearer ").split(' ')[1]
+        print(token)
+        try:
+            UntypedToken(token)
+        except (InvalidToken, TokenError) as e:
+            return JsonResponse({'error': 'Invalid token', 'detail': str(e)}, status=400)
+        user = JWTAuthentication().get_user(UntypedToken(token))
+        if user is not None:
+            user = get_object_or_404(AbstractUser, email=user.email, id=user.id)
+            if user.email == emaildata:  # Checa se o email do token é igual ao email do parametro
+                return JsonResponse({"email" : user.email, "id" : user.id}, status=200)
+            else:
+                return JsonResponse({'error': 'This use email is not compatibility'}, status=404)
+        else:
+            return JsonResponse({'exists': False}, status=404)
